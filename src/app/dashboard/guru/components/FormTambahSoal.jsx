@@ -6,10 +6,7 @@ import Link from "next/link";
 import { fetchApi } from "@/lib/api";
 import { toast } from "sonner";
 
-export default function FormTambahSoal({
-  onTambahSoal,
-  quizzes = [],
-}) {
+export default function FormTambahSoal({ onTambahSoal, quizzes = [] }) {
   const [tipeSoal, setTipeSoal] = useState("pg");
   const [courses, setCourses] = useState([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
@@ -113,18 +110,21 @@ export default function FormTambahSoal({
           },
         ];
 
-        for (const opt of optionsPayload) {
-          if (opt.text) {
-            await fetchApi("/quiz-options", {
+        const optionRequests = optionsPayload
+          .filter((opt) => opt.text?.trim())
+          .map((opt) =>
+            fetchApi("/quiz-options", {
               method: "POST",
               body: JSON.stringify({
                 questionId: newQuestion.id,
-                optionText: opt.text,
+                optionText: opt.text.trim(),
                 isCorrect: opt.isCorrect,
               }),
-            });
-          }
-        }
+            }),
+          );
+
+        // Kirim paralel supaya tidak menunggu 4 request secara berantai
+        await Promise.all(optionRequests);
       }
 
       toast.success("Soal berhasil disimpan ke database!");
@@ -141,8 +141,7 @@ export default function FormTambahSoal({
       reset();
     } catch (err) {
       toast.error(
-        "Gagal menyimpan soal: " +
-          (err.message || "Terjadi kesalahan server."),
+        "Gagal menyimpan soal: " + (err.message || "Terjadi kesalahan server."),
       );
     } finally {
       setIsSubmitting(false);
@@ -151,9 +150,7 @@ export default function FormTambahSoal({
 
   return (
     <div className="bg-surface border border-line rounded-2xl p-6 font-jakarta">
-      <h2 className="text-lg font-bold text-primary mb-4">
-        Buat Soal Baru
-      </h2>
+      <h2 className="text-lg font-bold text-primary mb-4">Buat Soal Baru</h2>
 
       {/* Switcher Tipe Soal */}
       <div className="mb-4">
@@ -209,8 +206,7 @@ export default function FormTambahSoal({
             </select>
           ) : (
             <div className="rounded-xl border border-line bg-base p-3 text-xs text-secondary">
-              Belum ada Course. Buat Course baru di menu Materi terlebih
-              dahulu.
+              Belum ada Course. Buat Course baru di menu Materi terlebih dahulu.
             </div>
           )}
         </div>
@@ -235,8 +231,8 @@ export default function FormTambahSoal({
             </select>
           ) : (
             <div className="rounded-xl border border-line bg-base p-3 text-xs text-secondary">
-              Belum ada kuis untuk course ini. Buat kuis terlebih dahulu di
-              menu Kelola Soal.
+              Belum ada kuis untuk course ini. Buat kuis terlebih dahulu di menu
+              Kelola Soal.
             </div>
           )}
         </div>
@@ -300,9 +296,7 @@ export default function FormTambahSoal({
 
         <button
           type="submit"
-          disabled={
-            isSubmitting || courses.length === 0 || !selectedQuizId
-          }
+          disabled={isSubmitting || courses.length === 0 || !selectedQuizId}
           className="mt-4 w-full cursor-pointer rounded-xl bg-brand py-3.5 text-sm font-semibold text-primary shadow-lg transition-all hover:bg-brand-hover disabled:opacity-50"
         >
           {isSubmitting ? "Menyimpan Soal..." : "Simpan Soal"}
